@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Lab 02.01 - Ambient and SpotLight</title>
+    <script type="text/javascript" src="three.js"></script>
+    <!--stats.js - klasaa, która służy do wyświetlania na ekranie okienka z informacją o wydajności aplikacji wyrażonej w FPS-->
+    <script type="text/javascript" src="stats.js"></script>
+    <!--OrbitControls.js - możliwia obracanie się użytkownikowi wokół centralnego punktu, za pomocą przycisków myszy-->
+	<script type="text/javascript" src="OrbitControls.js"></script>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<script src="Three.js"></script>
+<script src="ParametricGeometries.js"></script>
+<script src="CurveExtras.js"></script>
+<script src="Detector.js"></script>
+<script src="Stats.js"></script>
+<script src="OrbitControls.js"></script>
+<script src="THREEx.KeyboardState.js"></script>
+<script src="THREEx.FullScreen.js"></script>
+<script src="THREEx.WindowResize.js"></script>
+
+
+<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+
+<!--Javascript code that runs our Three.js examples-->
+<script type="text/javascript">
+
+	//standard global variables
+	var container, scene, camera, renderer, controls, stats;
+	var keyboard = new THREEx.KeyboardState();
+	var clock = new THREE.Clock();
+	
+	//custom global variables
+	var mirrorCube, mirrorCubeCamera; // for mirror material
+	var mirrorSphere, mirrorSphereCamera; // for mirror material
+
+	//SCENE
+	scene = new THREE.Scene();
+	
+	//CAMERA
+	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+	scene.add(camera);
+	camera.position.set(0,150,400);
+	camera.lookAt(scene.position);
+
+	//RENDERER
+	renderer = new THREE.WebGLRenderer( {antialias:true} );
+	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	document.getElementById('ThreeJS').appendChild(renderer.domElement);
+	
+	//CONTROLS
+	controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+	//STATS
+	stats = new Stats();
+	stats.domElement.style.position = 'absolute';
+	stats.domElement.style.bottom = '0px';
+	stats.domElement.style.zIndex = 100;
+	document.getElementById('ThreeJS').appendChild(stats.domElement);
+
+	//LIGHT
+	var light = new THREE.PointLight(0xffffff);
+	light.position.set(0,250,0);
+	scene.add(light);
+
+	//FLOOR
+	var floorTexture = new THREE.TextureLoader().load( 'textures/bathroom.jpg' );
+	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+	floorTexture.magFilter = THREE.LinearFilter;
+	floorTexture.minFilter = THREE.LinearFilter;
+	floorTexture.repeat.set( 6, 6 );
+	var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side:THREE.BackSide } );
+	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor.position.y = -0.5;
+	floor.rotation.x = Math.PI / 2;
+	scene.add(floor);
+	
+	//SKYBOX/FOG
+	var materialArray = [];
+	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'textures/DarkSea-xpos.jpg' ) }));
+	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'textures/DarkSea-xneg.jpg' ) }));
+	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'textures/DarkSea-ypos.jpg' ) }));
+	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'textures/DarkSea-yneg.jpg' ) }));
+	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'textures/DarkSea-zpos.jpg' ) }));
+	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'textures/DarkSea-zneg.jpg' ) }));
+	for (var i = 0; i < 6; i++)
+	   materialArray[i].side = THREE.BackSide;
+	var skyboxMaterial = new THREE.MeshFaceMaterial( materialArray );
+	skyboxMaterial.magFilter = THREE.LinearFilter;
+	skyboxMaterial.minFilter = THREE.LinearFilter;
+	var skyboxGeom = new THREE.BoxGeometry( 5000, 5000, 5000, 64, 64, 64 );
+	var skybox = new THREE.Mesh( skyboxGeom, skyboxMaterial );
+	scene.add( skybox );	
+	
+	////////////
+	// CUSTOM //
+	////////////
+	
+		
+	var cubeGeom = new THREE.CubeGeometry(200, 200, 30,1,1,1);
+	mirrorCubeCamera = new THREE.CubeCamera( 0.1, 5000, 512 );
+	scene.add( mirrorCubeCamera );
+	var mirrorCubeMaterial = new THREE.MeshPhongMaterial( { envMap: mirrorCubeCamera.renderTarget } );
+	mirrorCube = new THREE.Mesh( cubeGeom, mirrorCubeMaterial );
+	mirrorCube.position.set(-240,100,0);
+	mirrorCubeCamera.position.set(-240,100,0);
+	scene.add(mirrorCube);	
+
+	var cubeGeometry2 = new THREE.CubeGeometry(100, 100, 100);
+	var cubetexture2 = new THREE.TextureLoader().load('textures/plaster.jpg');
+    var cubeMaterial2 = new THREE.MeshPhongMaterial({color: 0xFFFFFF, specular: 0xbf9a9a, shininess: 200});
+	cubeMaterial2.bumpMap = cubetexture2;
+	cubeMaterial2.magFilter = THREE.LinearFilter;
+	cubeMaterial2.minFilter = THREE.LinearFilter;
+    var cube2 = new THREE.Mesh(cubeGeometry2, cubeMaterial2);
+	cube2.castShadow = true;
+	cube2.position.set(240, 50, -240);
+	scene.add(cube2);
+
+	var cubeGeometry3 = new THREE.CubeGeometry(100, 100, 100);
+	var cubetexture3 = new THREE.TextureLoader().load('textures/plaster-normal.jpg');
+    var cubeMaterial3 = new THREE.MeshPhongMaterial({color: 0xFFFFFF, specular: 0xbf9a9a, shininess: 200});
+	cubeMaterial3.normalMap = cubetexture3;
+	cubeMaterial3.magFilter = THREE.LinearFilter;
+	cubeMaterial3.minFilter = THREE.LinearFilter;
+    var cube3 = new THREE.Mesh(cubeGeometry3, cubeMaterial3);
+	cube3.castShadow = true;
+	cube3.position.set(-240, 100, -240);
+	scene.add(cube3);
+	
+	var sphereGeom =  new THREE.SphereGeometry( 50, 32, 50 ); // radius, segmentsWidth, segmentsHeight
+	mirrorSphereCamera = new THREE.CubeCamera( 0.1, 5000, 512 );
+	scene.add( mirrorSphereCamera );
+	var mirrorSphereMaterial = new THREE.MeshBasicMaterial( { envMap: mirrorSphereCamera.renderTarget } );
+	mirrorSphere = new THREE.Mesh( sphereGeom, mirrorSphereMaterial );
+	mirrorSphere.position.set(0,50,0);
+	mirrorSphereCamera.position.set(0,50,0);
+	scene.add(mirrorSphere);
+
+	var sphereGeometry2 = new THREE.SphereGeometry(50, 32, 20);
+	var spheretexture2 = new THREE.TextureLoader().load( 'textures/weave.jpg' );
+	var spheretexture2_1 = new THREE.TextureLoader().load( 'textures/weave-bump.jpg' );
+    var sphereMaterial2 = new THREE.MeshPhongMaterial();
+	sphereMaterial2.map = spheretexture2;
+	sphereMaterial2.bumpMap = spheretexture2_1;
+	spheretexture2.magFilter = THREE.LinearFilter;
+	spheretexture2.magFilter = THREE.LinearFilter;
+    var sphere2 = new THREE.Mesh(sphereGeometry2, sphereMaterial2);
+	sphere2.position.set(240, 50, 0);
+	sphere2.castShadow = true;
+	scene.add(sphere2);
+
+	var sphereGeometry3 = new THREE.SphereGeometry(50, 32, 20);
+	var spheretexture3 = new THREE.TextureLoader().load( 'textures/stone.jpg' );
+	var spheretexture3_1 = new THREE.TextureLoader().load( 'textures/stone-bump.jpg' );
+    var sphereMaterial3 = new THREE.MeshPhongMaterial({color: 0xFFF6DF});
+	sphereMaterial3.map = spheretexture3
+	sphereMaterial3.bumpMap = spheretexture3_1;
+	spheretexture3.magFilter = THREE.NearestFilter;
+	spheretexture3.magFilter = THREE.NearestFilter;
+    var sphere3 = new THREE.Mesh(sphereGeometry3, sphereMaterial3);
+	sphere3.position.set(-240, 50, 240);
+	sphere3.castShadow = true;
+	scene.add(sphere3);
+	
+	var step = 0;
+
+	render();
+	
+	function render() 
+	{
+		controls.update();
+		stats.update();
+
+		//move the CubeCamera to the position of the object
+		//that has a reflective surface, "take a picture" in each direction
+		//and apply it to the surface.
+		//need to hide surface before and after so that it does not
+		//"get in the way" of the camera
+		mirrorCube.visible = false;
+		mirrorCubeCamera.updateCubeMap( renderer, scene );
+		mirrorCube.visible = true;
+
+		mirrorSphere.visible = false;
+		mirrorSphereCamera.updateCubeMap( renderer, scene );
+		mirrorSphere.visible = true;
+
+		step += 0.050;
+		//chcąc aby odbijała się od powierzchni - wówczas +50 bo jej pozycja na y tak jest ustawiona.
+		sphere2.rotation.y += 0.05;
+		sphere2.position.y = 50 + ( 40 * Math.abs(Math.sin(step)));
+
+		sphere3.rotation.y += 0.05;
+		sphere3.position.x = 50 + ( 50 * (Math.cos(step)));
+        sphere3.position.y = 50 + ( 50 * Math.abs(Math.sin(step)));
+
+		mirrorSphere.position.y = 50 + ( 40 * Math.abs(Math.sin(step)));
+
+		mirrorCube.rotation.y += 0.025;
+
+		cube2.rotation.y += 0.05;
+
+		cube3.rotation.y += 0.05;
+		cube3.rotation.x += 0.05;
+		cube3.rotation.z += 0.05;
+
+		requestAnimationFrame(render);
+		renderer.render( scene, camera );
+	}
+</script>
+</body>
+</html>
