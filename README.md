@@ -1,2 +1,2 @@
-# computer-graphics-labs
-Laboratory exercises for Computer graphics (2020)
+# Computer Graphics
+Laboratory exercises where I've used the JavaScript library - Three.js.
