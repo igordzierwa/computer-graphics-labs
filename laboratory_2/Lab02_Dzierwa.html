@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Lab 02.01 - Ambient and SpotLight</title>
+    <script type="text/javascript" src="three.js"></script>
+    <!--stats.js - klasaa, która służy do wyświetlania na ekranie okienka z informacją o wydajności aplikacji wyrażonej w FPS-->
+    <script type="text/javascript" src="stats.js"></script>
+    <!--OrbitControls.js - możliwia obracanie się użytkownikowi wokół centralnego punktu, za pomocą przycisków myszy-->
+	<script type="text/javascript" src="OrbitControls.js"></script>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<!--Div which will hold the stats-->
+<div id="Stats-output">
+</div>
+<!--Div which will hold the Output-->
+<div id="WebGL-output">
+</div>
+
+<!--Javascript code that runs our Three.js examples-->
+<script type="text/javascript">
+        var stats = initStats();
+
+        //Create a scene, that will hold all our elements such as objects, cameras and lights.
+        var scene = new THREE.Scene();
+
+        //Create a camera, which defines where we're looking at.
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+		
+
+        //Create a render and set the size
+        var renderer = new THREE.WebGLRenderer();
+
+        renderer.setClearColor(new THREE.Color(0xEEEEEE));  //background color and opacity
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;  //false is default
+		renderer.autoClear = true;         //default
+		renderer.autoClearColor = true;    //default
+		
+		var ctr = new THREE.OrbitControls( camera, renderer.domElement);
+
+        //Creating the ground plane
+        var planeGeometry = new THREE.PlaneGeometry(80, 80);
+        var planeMaterial = new THREE.MeshPhongMaterial({color: 0xffffff, side:THREE.DoubleSide});
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.receiveShadow = true;
+
+        //Rotate and position the plane
+        plane.rotation.x = -0.5 * Math.PI;
+        plane.position.x = 15
+        plane.position.y = 0
+        plane.position.z = 0
+
+        //Add the plane to the scene
+        scene.add(plane);
+
+        //Create a cube - spinning
+        var cubeGeometry = new THREE.CubeGeometry(8, 8, 8);
+        var cubeMaterial = new THREE.MeshPhongMaterial({color: 0xff0000, specular: 0x9e6464, shininess: 200});
+        var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.castShadow = true;
+        cube.position.set(-10, 6, 0);
+        scene.add(cube);
+
+        //Create a cube - moving aroung
+        var cubeGeometry2 = new THREE.CubeGeometry(4, 4, 4);
+        var cubeMaterial2 = new THREE.MeshPhongMaterial({color: 0xFFEC04, specular: 0xbf9a9a, shininess: 200});
+        var cube2 = new THREE.Mesh(cubeGeometry2, cubeMaterial2);
+        //ustawienie rzucanie cienia - domyślnie na false
+        cube2.castShadow = true;
+        cube2.position.set(-6, 3, 20);
+        scene.add(cube2);
+
+        //Create a sphere - bouncing
+        var sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
+        var sphereMaterial = new THREE.MeshPhongMaterial({color: 0x1f6caa, specular: 0xbf9a9a, shininess: 200});
+        var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.position.set(20, 0, 0);
+        sphere.castShadow = true;
+        scene.add(sphere);
+
+        //Create a sphere - bouncing up and down
+        var sphereGeometry2 = new THREE.SphereGeometry(4, 20, 20);
+        var sphereMaterial2 = new THREE.MeshLambertMaterial({color: 0x02FF0A});
+        var sphere2 = new THREE.Mesh(sphereGeometry2, sphereMaterial2);
+        sphere2.position.set(10, 0, -25);
+        sphere2.castShadow = true;
+        scene.add(sphere2);
+
+        //Position and point the camera to the center of the scene
+        camera.position.set(-25, 30, 25);
+        camera.lookAt(new THREE.Vector3(10, 0, 0));
+
+        //Add subtle ambient lighting
+        var ambiColor = "#0a0a0a";
+        var ambientLight = new THREE.AmbientLight(ambiColor);
+        scene.add(ambientLight);
+
+        //Spotlight for sphere
+        var spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.position.set(-40, 60, -10);
+        spotLight.castShadow = true;
+		spotLight.angle = 0.2;
+		spotLight.target = sphere;
+        scene.add(spotLight);
+
+        //Spotlight spinning
+        var spotLight2 = new THREE.SpotLight(0x989898);
+        spotLight2.position.set(15, 20, 0);
+        spotLight2.castShadow = true;
+		spotLight2.angle = 0.2;
+		// spotLight2.target = cube;
+        scene.add(spotLight2);
+
+        //Spotlight for cube - rounding
+        var spotLight3 = new THREE.SpotLight(0xFF04EC);
+        spotLight3.position.set(-40, 60, -10);
+        spotLight3.castShadow = true;
+		spotLight3.angle = 0.1;
+		spotLight3.target = cube2;
+        scene.add(spotLight3);
+
+
+        //Add the output of the renderer to the html element
+        document.getElementById("WebGL-output").appendChild(renderer.domElement);
+
+        var step = 0;
+        render();
+
+        function render() {
+            stats.update();
+            //rotate the cube around its axes
+            cube.rotation.x += 0.02;
+            cube.rotation.y += 0.02;
+            cube.rotation.z += 0.02;
+
+            //bounce the sphere x+y
+            step += 0.025;
+            sphere.position.x = 20 + ( 10 * (Math.cos(step)));
+            sphere.position.y = 2 + ( 10 * Math.abs(Math.sin(step)));
+
+            //bounce the sphere2 y
+            sphere2.position.y = 2 + ( 10 * Math.abs(Math.sin(step)));
+
+            //cuber moving around
+            cube2.position.z += 0.3*Math.cos(step);
+            cube2.position.x += 0.3*Math.sin(step);
+
+            //moving spotlight
+            spotLight2.position.set((50*Math.sin(step)), 20, 100*Math.cos(step));
+
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+
+        function initStats() {
+            var stats = new Stats();
+
+            //0:fps ; 1:ms
+            stats.setMode(0);
+
+            //Left corner with FPS
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            //Add the output of the stats to the html element
+            document.getElementById("Stats-output").appendChild(stats.domElement);
+            return stats;
+        }
+</script>
+</body>
+</html>
