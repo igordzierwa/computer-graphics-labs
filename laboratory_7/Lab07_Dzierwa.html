@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script id="vertex-shader" type="x-shader/x-vertex">
+attribute vec4 vPosition;
+void main()
+{
+    gl_Position = vPosition;
+}
+</script>
+<script id="fragment-shader" type="x-shader/x-fragment">
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform float u_time;
+
+float plot(vec2 st, float pct){
+    return  smoothstep( pct-0.02, pct, st.y) -
+            smoothstep( pct, pct+0.02, st.y);
+}
+
+void main() {
+    vec2 st = gl_FragCoord.xy/vec2(500.0, 500.0);
+
+    float y = smoothstep(-0.5,2.,st.x);
+
+    vec3 color = vec3(y);
+
+    float pct = plot(st,y);
+    color = (0.95-pct)*color+pct*vec3(0.0,1.1,2.2);
+
+    gl_FragColor = vec4(color,1.0);
+}
+</script>
+<script type="text/javascript" src="webgl-utils.js"></script>
+<script type="text/javascript" src="initShaders.js"></script>
+<script type="text/javascript" src="Lab07_Dzierwa.js"></script>
+</head>
+<canvas id="gl-canvas" width="1000" height="1000">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+</body>
+</html>
